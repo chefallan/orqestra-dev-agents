@@ -27,6 +27,10 @@ Operating Rules:
 5. Update memory using `agents/memory/context-ledger.md` after every major step.
 6. Do not lose state: if context is large, summarize into memory artifacts and continue.
 7. When user provides seed prompts, enhance and persist them to `agents/`.
+8. Default project scaffold policy for new builds:
+  - Scaffold product code under `app/` by default.
+  - Use `app/api` for backend/API, `app/web` for frontend, and `app/docs` for project docs.
+  - Treat `runtime/` as Orqestra runtime files only and do not place product app code there unless the user explicitly requests a custom path.
 
 Delegation Map:
 - Product framing -> `product-manager.agents.md`

@@ -2,6 +2,8 @@
 
 Use Orchestrator behavior by default for this workspace.
 
+If you are not using GitHub Copilot Chat, use AGENTS.md or .github/skills/orqestra-workflow/SKILL.md as the portable entrypoint.
+
 Primary agent spec:
 - agents/orchestrator.agents.md
 

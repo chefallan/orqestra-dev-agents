@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from typing import Any, Dict, List, Optional
+
 from enum import Enum
-from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -39,7 +40,7 @@ class TaskStatus(str, Enum):
 
 class CreateRunRequest(BaseModel):
     objective: str = Field(min_length=4)
-    context: dict[str, Any] = Field(default_factory=dict)
+    context: Dict[str, Any] = Field(default_factory=dict)
 
 
 class EnhancePromptRequest(BaseModel):
@@ -53,17 +54,17 @@ class TaskRecord(BaseModel):
     id: str
     run_id: str
     tenant_id: str
-    parent_task_id: str | None = None
-    depends_on: list[str] = Field(default_factory=list)
+    parent_task_id: Optional[str] = None
+    depends_on: List[str] = Field(default_factory=list)
     retry_count: int = 0
     max_retries: int = 2
     role: AgentRole
     task_type: TaskType
     objective: str
-    payload: dict[str, Any] = Field(default_factory=dict)
+    payload: Dict[str, Any] = Field(default_factory=dict)
     status: TaskStatus
-    output: dict[str, Any] = Field(default_factory=dict)
-    error: str | None = None
+    output: Dict[str, Any] = Field(default_factory=dict)
+    error: Optional[str] = None
     created_at: str
     updated_at: str
 

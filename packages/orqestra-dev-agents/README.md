@@ -1,6 +1,6 @@
 ﻿# orqestra-dev-agents
 
-Installable CLI to bootstrap an orchestrator-driven autonomous agent setup for repositories operated in VS Code.
+Installable CLI to bootstrap an orchestrator-driven autonomous agent setup for repositories operated from Copilot, Claude, Codex, OpenCode, and similar coding assistants.
 
 ## Install
 
@@ -27,12 +27,13 @@ npx orqestra-dev-agents install-vscode
 
 Note: if `package.json` is missing, `init` now creates a minimal one automatically and wires runtime scripts.
 
-Then in VS Code:
+Then in your coding assistant:
 
-1. Open Copilot Chat in Agent mode.
-2. Use `agents/orchestrator.agents.md` as the entrypoint agent spec.
-	- If `.github/copilot-instructions.md` exists, you can directly talk to the orchestrator without manual spec paste.
-3. Start with a concrete objective, for example:
+1. In GitHub Copilot Chat, open Agent mode and select the Orqestra chat mode.
+2. In Claude, Codex, OpenCode, and similar assistants, start from `AGENTS.md` or `.github/skills/orqestra-workflow/SKILL.md`.
+3. Use `agents/orchestrator.agents.md` as the direct entrypoint agent spec when your assistant supports loading prompt files.
+	- If `.github/copilot-instructions.md` exists, Copilot can directly talk to the orchestrator without manual spec paste.
+4. Start with a concrete objective, for example:
 
 ```text
 Build the first production-ready vertical slice for user signup, login, and project creation with tests.
@@ -45,6 +46,75 @@ npm run orqestra:start
 ```
 
 ## Commands
+
+### Compact daily-use hub
+
+Open the compact catalog for the current repo and your available skills:
+
+```bash
+orqestra-dev-agents hub
+```
+
+List or open agent specs:
+
+```bash
+orqestra-dev-agents agents
+orqestra-dev-agents agents orchestrator
+orqestra-dev-agents agents orchestrator --print
+```
+
+List or open workflows:
+
+```bash
+orqestra-dev-agents workflows
+orqestra-dev-agents workflows autonomous-webapp-loop
+```
+
+List or open contracts and tickets:
+
+```bash
+orqestra-dev-agents contracts
+orqestra-dev-agents contracts handoff-contract
+```
+
+List or open skills:
+
+```bash
+orqestra-dev-agents skills
+orqestra-dev-agents skills georithm
+orqestra-dev-agents skills agents
+orqestra-dev-agents skills install orqestra-workflow --agent claude-code --scope project
+```
+
+Skills are resolved from these directories when present:
+
+- `skills/` in the current repo
+- `.agents/skills/` in the current repo
+- `.github/skills/` in the current repo
+- `~/.claude/skills/`
+- any extra paths in `ORQESTRA_SKILLS_DIRS` separated by your platform path delimiter
+
+The package scaffolds a repo-local skill at `.github/skills/orqestra-workflow/SKILL.md` so non-Copilot assistants have a first-class Orqestra entrypoint too.
+
+The CLI can also install skills into supported agent-specific directories for project or global scope. Use `orqestra-dev-agents skills agents` to list the full registry. Supported ids include `amp`, `augment`, `claude-code`, `cline`, `codex`, `continue`, `cursor`, `gemini-cli`, `github-copilot`, `opencode`, `roo`, `windsurf`, `zencoder`, and the rest of the registry you provided.
+
+Examples:
+
+```bash
+orqestra-dev-agents skills agents
+orqestra-dev-agents skills install orqestra-workflow --agent claude-code --scope project
+orqestra-dev-agents skills install orqestra-workflow --agent codex --scope project
+orqestra-dev-agents skills install orqestra-workflow --agent github-copilot --scope global
+```
+
+Run related tools from one command surface:
+
+```bash
+orqestra-dev-agents tools
+orqestra-dev-agents tools handoff --from orchestrator --to webapp-builder --epic compact-cli
+orqestra-dev-agents tools memory search --query "runtime"
+orqestra-dev-agents tools validate-contracts
+```
 
 ### Initialize a repo
 
@@ -125,6 +195,11 @@ orqestra-dev-agents install-vscode --check
 After init with runtime assets, the CLI auto-adds npm scripts to your target `package.json`:
 
 ```bash
+npm run orqestra:hub
+npm run orqestra:agents
+npm run orqestra:workflows
+npm run orqestra:skills
+npm run orqestra:tools
 npm run orqestra:start
 npm run orqestra:status
 npm run orqestra:stop
@@ -177,8 +252,8 @@ Suggested flow:
 
 1. Install VS Code dependencies: `orqestra-dev-agents install-vscode`
 2. Start runtime + live watch: `npm run orqestra:start`
-3. Open Copilot Chat in Agent mode.
-4. Use `agents/orchestrator.agents.md` (or rely on `.github/copilot-instructions.md`).
+3. Open your coding assistant of choice.
+4. Use `AGENTS.md`, `.github/skills/orqestra-workflow/SKILL.md`, or `agents/orchestrator.agents.md` depending on what the assistant supports.
 5. Send the single objective above in chat.
 6. Track runtime status anytime with `npm run orqestra:status`.
 7. Stop runtime when done with `npm run orqestra:stop`.
@@ -190,7 +265,9 @@ Suggested flow:
 - `agents/memory/context-ledger.md`
 - `agents/memory/decision-log.md`
 - `agents/memory/memory-schema.sql`
+- `AGENTS.md`
 - `.github/copilot-instructions.md`
+- `.github/skills/orqestra-workflow/SKILL.md`
 - `docs/autogenerated/ARCHITECTURE.md`
 - `docs/autogenerated/CHANGES.md`
 - `orqestra-dev-agents.agents.json` config

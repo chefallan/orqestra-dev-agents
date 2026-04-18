@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from typing import Dict, Iterable, List, Optional
+
 from datetime import datetime, timezone
 from threading import Lock
-from typing import Iterable
 from uuid import uuid4
 
 from .models import AgentRole, TaskRecord, TaskStatus, TaskType
@@ -14,8 +15,8 @@ def utc_now() -> str:
 
 class TaskStore:
     def __init__(self) -> None:
-        self._tasks: dict[str, TaskRecord] = {}
-        self._run_meta: dict[str, dict[str, str]] = {}
+        self._tasks: Dict[str, TaskRecord] = {}
+        self._run_meta: Dict[str, Dict[str, str]] = {}
         self._lock = Lock()
 
     def create_task(
@@ -27,8 +28,8 @@ class TaskStore:
         task_type: TaskType,
         objective: str,
         payload: dict,
-        parent_task_id: str | None = None,
-        depends_on: list[str] | None = None,
+        parent_task_id: Optional[str] = None,
+        depends_on: Optional[List[str]] = None,
         max_retries: int = 2,
     ) -> TaskRecord:
         now = utc_now()
@@ -58,7 +59,7 @@ class TaskStore:
                 }
         return task
 
-    def get_task(self, task_id: str) -> TaskRecord | None:
+    def get_task(self, task_id: str) -> Optional[TaskRecord]:
         with self._lock:
             task = self._tasks.get(task_id)
             return task.model_copy(deep=True) if task else None
@@ -67,7 +68,7 @@ class TaskStore:
         with self._lock:
             self._tasks[task.id] = task
 
-    def set_status(self, task_id: str, status: TaskStatus, *, output: dict | None = None, error: str | None = None) -> TaskRecord:
+    def set_status(self, task_id: str, status: TaskStatus, *, output: Optional[dict] = None, error: Optional[str] = None) -> TaskRecord:
         with self._lock:
             task = self._tasks[task_id]
             task.status = status
@@ -89,7 +90,7 @@ class TaskStore:
             self._tasks[task.id] = task
             return task.model_copy(deep=True)
 
-    def list_tasks(self, *, run_id: str | None = None, tenant_id: str | None = None) -> list[TaskRecord]:
+    def list_tasks(self, *, run_id: Optional[str] = None, tenant_id: Optional[str] = None) -> List[TaskRecord]:
         with self._lock:
             tasks: Iterable[TaskRecord] = self._tasks.values()
             if run_id:
@@ -98,7 +99,7 @@ class TaskStore:
                 tasks = [task for task in tasks if task.tenant_id == tenant_id]
             return sorted((task.model_copy(deep=True) for task in tasks), key=lambda t: t.created_at)
 
-    def list_runs(self, tenant_id: str) -> list[str]:
+    def list_runs(self, tenant_id: str) -> List[str]:
         with self._lock:
             return sorted(
                 run_id

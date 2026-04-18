@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List, Optional
+
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Query
@@ -7,7 +9,6 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Query
 from .auth import load_api_key_map, validate_tenant_api_key
 from .engine import AgentRuntime, utc_now
 from .models import CreateRunRequest, EnhancePromptRequest, MemoryUpsertRequest, TaskRecord, TaskStatus
-
 
 repo_root = Path(__file__).resolve().parents[2]
 runtime = AgentRuntime(repo_root=repo_root)
@@ -23,8 +24,8 @@ def _task_to_api(task: TaskRecord) -> dict:
 
 def _contract_validation_summary(task: TaskRecord) -> dict:
     status = "not_applicable"
-    valid: bool | None = None
-    errors: list[str] = []
+    valid: Optional[bool] = None
+    errors: List[str] = []
 
     artifacts = {}
     if isinstance(task.output, dict):
@@ -69,8 +70,8 @@ def _contract_validation_summary(task: TaskRecord) -> dict:
 
 
 def require_tenant(
-    x_tenant_id: str | None = Header(default=None),
-    x_api_key: str | None = Header(default=None),
+    x_tenant_id: Optional[str] = Header(default=None),
+    x_api_key: Optional[str] = Header(default=None),
 ) -> str:
     if not x_tenant_id or not x_api_key:
         raise HTTPException(status_code=401, detail="Missing X-Tenant-Id or X-Api-Key")
@@ -78,32 +79,26 @@ def require_tenant(
         raise HTTPException(status_code=403, detail="Invalid tenant credentials")
     return x_tenant_id
 
-
 @app.on_event("startup")
 async def startup_event() -> None:
     await runtime.start()
-
 
 @app.on_event("shutdown")
 async def shutdown_event() -> None:
     await runtime.stop()
 
-
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "time": utc_now()}
-
 
 @app.get("/autonomy/status")
 def autonomy_status(_: str = Depends(require_tenant)) -> dict:
     return runtime.get_autonomy_status()
 
-
 @app.post("/runs")
 async def create_run(request: CreateRunRequest, tenant_id: str = Depends(require_tenant)) -> dict:
     run_id = await runtime.create_run(request.objective, request.context, tenant_id)
     return {"run_id": run_id, "status": "queued"}
-
 
 @app.post("/prompts/enhance")
 async def enhance_prompt(request: EnhancePromptRequest, tenant_id: str = Depends(require_tenant)) -> dict:
@@ -116,19 +111,16 @@ async def enhance_prompt(request: EnhancePromptRequest, tenant_id: str = Depends
     )
     return {"run_id": run_id, "task_id": task_id, "status": "queued"}
 
-
 @app.get("/runs")
-def list_runs(tenant_id: str = Depends(require_tenant)) -> list[dict]:
+def list_runs(tenant_id: str = Depends(require_tenant)) -> List[dict]:
     return [view.model_dump() for view in runtime.list_runs(tenant_id)]
 
-
 @app.get("/runs/{run_id}/tasks")
-def list_run_tasks(run_id: str, tenant_id: str = Depends(require_tenant)) -> list[dict]:
+def list_run_tasks(run_id: str, tenant_id: str = Depends(require_tenant)) -> List[dict]:
     if not runtime.run_belongs_to_tenant(run_id, tenant_id):
         raise HTTPException(status_code=404, detail="Run not found")
     tasks = runtime.list_tasks(run_id=run_id, tenant_id=tenant_id)
     return [_task_to_api(task) for task in tasks]
-
 
 @app.get("/runs/{run_id}/autonomy-health")
 def get_run_autonomy_health(run_id: str, tenant_id: str = Depends(require_tenant)) -> dict:
@@ -136,7 +128,6 @@ def get_run_autonomy_health(run_id: str, tenant_id: str = Depends(require_tenant
     if not report:
         raise HTTPException(status_code=404, detail="Run not found")
     return report
-
 
 @app.get("/tasks/{task_id}")
 def get_task(task_id: str, tenant_id: str = Depends(require_tenant)) -> dict:
@@ -147,22 +138,19 @@ def get_task(task_id: str, tenant_id: str = Depends(require_tenant)) -> dict:
         raise HTTPException(status_code=404, detail="Task not found")
     return _task_to_api(task)
 
-
 @app.get("/runs/{run_id}/dead-letter")
-def get_dead_letter(run_id: str, tenant_id: str = Depends(require_tenant)) -> list[dict]:
+def get_dead_letter(run_id: str, tenant_id: str = Depends(require_tenant)) -> List[dict]:
     if not runtime.run_belongs_to_tenant(run_id, tenant_id):
         raise HTTPException(status_code=404, detail="Run not found")
     return [_task_to_api(task) for task in runtime.get_dead_letter(run_id, tenant_id)]
-
 
 @app.get("/memory/search")
 def search_memory(
     query: str = Query(min_length=2),
     limit: int = 8,
     tenant_id: str = Depends(require_tenant),
-) -> list[dict]:
+) -> List[dict]:
     return runtime.memory_store.search(query=query, limit=limit, tenant_id=tenant_id)
-
 
 @app.post("/memory/upsert")
 def upsert_memory(request: MemoryUpsertRequest, tenant_id: str = Depends(require_tenant)) -> dict:

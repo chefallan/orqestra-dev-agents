@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import List
+
 import sqlite3
 from pathlib import Path
 
@@ -46,7 +48,7 @@ class MemoryStore:
                 (key, memory_type, tagged, content, source, now, now),
             )
 
-    def search(self, query: str, limit: int = 8, tenant_id: str = "") -> list[dict]:
+    def search(self, query: str, limit: int = 8, tenant_id: str = "") -> List[dict]:
         with self._connect() as conn:
             rows = conn.execute(
                 """

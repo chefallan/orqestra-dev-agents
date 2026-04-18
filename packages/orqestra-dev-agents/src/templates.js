@@ -1,4 +1,51 @@
 ﻿const TEMPLATE_FILES = {
+  ".gitignore": `# OS/editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/tasks.json
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Web frameworks and tool caches
+.next/
+.nuxt/
+.svelte-kit/
+.turbo/
+.parcel-cache/
+.cache/
+.vercel/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.nox/
+.tox/
+.venv/
+venv/
+
+# Env and local runtime state
+.env
+.env.*
+!.env.example
+.orqestra-runtime.pid
+.orqestra-runtime.json
+`,
+
   "agents/orchestrator.agents.md": `---
 mode: agent
 description: Single entrypoint agent that plans, delegates, and integrates specialist delivery with evidence.
@@ -23,6 +70,10 @@ Operating Rules:
 4. Require each specialist to return what changed, why, validation, and risks.
 5. Update memory using agents/memory/context-ledger.md after every major step.
 6. Summarize large context into memory artifacts to avoid state loss.
+7. Default project scaffold policy for new builds:
+  - Scaffold product code under app/ by default.
+  - Use app/api for backend/API, app/web for frontend, and app/docs for project docs.
+  - Treat runtime/ as Orqestra runtime files only and do not place product app code there unless the user explicitly requests a custom path.
 
 Delegation Map:
 - Product framing -> product-manager.agents.md
@@ -191,6 +242,8 @@ Mission:
 - Implement one thin, production-minded vertical slice at a time.
 - Match accepted contracts exactly (API, schema, events, UI states).
 - Produce verifiable evidence for every claim.
+- Default implementation paths to app/api, app/web, and app/docs unless the user explicitly requests a custom directory.
+- Keep runtime/ for Orqestra runtime files only unless the user explicitly asks to place product code there.
 
 Skill Focus:
 1. Contract fidelity
@@ -556,6 +609,8 @@ END;
 
 Use Orchestrator behavior by default for this workspace.
 
+If you are not using GitHub Copilot Chat, use AGENTS.md or .github/skills/orqestra-workflow/SKILL.md as the portable entrypoint.
+
 Primary agent spec:
 - agents/orchestrator.agents.md
 
@@ -574,6 +629,83 @@ Specialist agent specs:
 - agents/qa-reliability.agents.md
 - agents/documentation-agent.agents.md
 - agents/memory-steward.agents.md
+`,
+
+  "AGENTS.md": `# Orqestra Workspace Instructions
+
+Use Orchestrator behavior by default for this workspace, regardless of which coding assistant you are using.
+
+Primary entrypoints:
+- AGENTS.md for assistants that automatically read workspace instructions.
+- .github/copilot-instructions.md for GitHub Copilot Chat.
+- .github/skills/orqestra-workflow/SKILL.md for assistants that expose reusable skills.
+- agents/orchestrator.agents.md for direct prompt or agent-spec loading.
+
+Operating requirements:
+- Restate the objective clearly and build a phased plan.
+- Delegate by creating or using contracts under agents/contracts/.
+- Keep delivery in thin, end-to-end slices with validation evidence.
+- Keep memory updated in agents/memory/context-ledger.md and decision-log.md.
+- Prefer progress updates and the next best action after each major step.
+
+Specialist agent specs:
+- agents/product-manager.agents.md
+- agents/system-architect.agents.md
+- agents/webapp-builder.agents.md
+- agents/security-auditor.agents.md
+- agents/qa-reliability.agents.md
+- agents/documentation-agent.agents.md
+- agents/memory-steward.agents.md
+
+Assistant compatibility notes:
+- GitHub Copilot Chat: use .github/copilot-instructions.md and .github/chatmodes/orqestra-orchestrator.chatmode.md.
+- Claude, Codex, OpenCode, and similar assistants: start from this file, then use agents/orchestrator.agents.md plus the handoff contract and workflow files.
+- Skills-capable assistants: load .github/skills/orqestra-workflow/SKILL.md for the packaged workflow.
+`,
+
+  ".github/skills/orqestra-workflow/SKILL.md": `---
+name: orqestra-workflow
+description: "Use when running the Orqestra orchestrator workflow from Copilot, Claude, Codex, OpenCode, or another coding assistant. Covers intake, phased planning, thin-slice delegation, contracts, validation, docs, and memory updates."
+---
+
+# Orqestra Workflow Skill
+
+Use this skill when the user wants the Orqestra system to drive work through the orchestrator and specialist agents.
+
+## Entry files
+
+- AGENTS.md
+- agents/orchestrator.agents.md
+- agents/contracts/handoff-contract.md
+- agents/workflows/autonomous-webapp-loop.md
+- agents/memory/context-ledger.md
+- agents/memory/decision-log.md
+
+## Workflow
+
+1. Restate the objective in one sentence.
+2. Build a phased plan before implementation.
+3. Keep work in thin, end-to-end vertical slices.
+4. Delegate using agents/contracts/handoff-contract.md.
+5. Require evidence for implementation, QA, security, documentation, and memory updates.
+6. Update context-ledger and decision-log after major changes.
+7. Report blockers early with one recommended path.
+
+## Specialist map
+
+- Product framing: agents/product-manager.agents.md
+- Architecture: agents/system-architect.agents.md
+- Implementation: agents/webapp-builder.agents.md
+- Security: agents/security-auditor.agents.md
+- QA and reliability: agents/qa-reliability.agents.md
+- Documentation: agents/documentation-agent.agents.md
+- Memory stewardship: agents/memory-steward.agents.md
+
+## Compatibility notes
+
+- GitHub Copilot Chat can also use .github/copilot-instructions.md and the Orqestra chat mode.
+- Claude, Codex, OpenCode, and similar assistants should treat this skill plus AGENTS.md as the default operating contract for the repo.
+- If the assistant does not support skills, load AGENTS.md and agents/orchestrator.agents.md directly.
 `,
 
   ".github/chatmodes/orqestra-orchestrator.chatmode.md": `---
@@ -634,9 +766,12 @@ Specialist agent specs:
 
 const MINIMAL_TEMPLATE_FILES = Object.fromEntries(
   Object.entries(TEMPLATE_FILES).filter(([relativePath]) =>
+    relativePath === ".gitignore" ||
     (relativePath.startsWith("agents/") && relativePath.endsWith(".agents.md")) ||
     relativePath === "agents/workflows/autonomous-webapp-loop.md" ||
+    relativePath === "AGENTS.md" ||
     relativePath === ".github/copilot-instructions.md" ||
+    relativePath === ".github/skills/orqestra-workflow/SKILL.md" ||
     relativePath === ".github/chatmodes/orqestra-orchestrator.chatmode.md" ||
     relativePath === "orqestra-dev-agents.agents.json"
   )

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from typing import Dict
+
 from pathlib import Path
 
 from .models import AgentRole
 
-
-ROLE_PROMPT_FILES: dict[AgentRole, str] = {
+ROLE_PROMPT_FILES: Dict[AgentRole, str] = {
     AgentRole.ORCHESTRATOR: "orchestrator.agents.md",
     AgentRole.PRODUCT_MANAGER: "product-manager.agents.md",
     AgentRole.SYSTEM_ARCHITECT: "system-architect.agents.md",

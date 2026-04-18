@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Any
+from typing import Any, Dict
 
+from dataclasses import dataclass
 
 @dataclass
 class WorkerResponse:
     summary: str
-    artifacts: dict[str, Any]
+    artifacts: Dict[str, Any]

@@ -1,17 +1,17 @@
 from __future__ import annotations
 
+from typing import Any, Dict, List, Optional
+
 import json
 import re
 from copy import deepcopy
-from typing import Any
 
 from .models import AgentRole
-
 
 _MARKER_PATTERN = re.compile(r"BEGIN_AGENT_JSON\s*(\{.*?\})\s*END_AGENT_JSON", re.DOTALL)
 
 
-def extract_agent_json_block(text: str) -> dict[str, Any]:
+def extract_agent_json_block(text: str) -> Dict[str, Any]:
     match = _MARKER_PATTERN.search(text)
     if not match:
         raise ValueError("Missing BEGIN_AGENT_JSON/END_AGENT_JSON block")
@@ -34,25 +34,25 @@ def summarize_narrative(text: str) -> str:
     return first_line or "No narrative summary provided."
 
 
-def validate_agent_payload(role: AgentRole, payload: dict[str, Any]) -> list[str]:
+def validate_agent_payload(role: AgentRole, payload: Dict[str, Any]) -> List[str]:
     schema = _ROLE_SCHEMAS.get(role)
     if not schema:
         return []
-    errors: list[str] = []
+    errors: List[str] = []
     _validate_value(payload, schema, path="$", errors=errors)
     return errors
 
 
-def get_role_schema(role: AgentRole) -> dict[str, Any] | None:
+def get_role_schema(role: AgentRole) -> Optional[Dict[str, Any]]:
     schema = _ROLE_SCHEMAS.get(role)
     return deepcopy(schema) if schema else None
 
 
-def get_role_schemas() -> dict[AgentRole, dict[str, Any]]:
+def get_role_schemas() -> Dict[AgentRole, Dict[str, Any]]:
     return {role: deepcopy(schema) for role, schema in _ROLE_SCHEMAS.items()}
 
 
-def _validate_value(value: Any, schema: dict[str, Any], *, path: str, errors: list[str]) -> None:
+def _validate_value(value: Any, schema: Dict[str, Any], *, path: str, errors: List[str]) -> None:
     expected_type = schema.get("type")
     if expected_type == "str":
         if not isinstance(value, str):
@@ -69,8 +69,8 @@ def _validate_value(value: Any, schema: dict[str, Any], *, path: str, errors: li
         if not isinstance(value, dict):
             errors.append(f"{path} must be an object")
             return
-        fields: dict[str, dict[str, Any]] = schema.get("fields", {})
-        required: list[str] = schema.get("required", list(fields.keys()))
+        fields: Dict[str, Dict[str, Any]] = schema.get("fields", {})
+        required: List[str] = schema.get("required", list(fields.keys()))
         for key in required:
             if key not in value:
                 errors.append(f"{path}.{key} is required")
@@ -92,8 +92,7 @@ def _validate_value(value: Any, schema: dict[str, Any], *, path: str, errors: li
 
     errors.append(f"{path} has unsupported schema type: {expected_type}")
 
-
-_ROLE_SCHEMAS: dict[AgentRole, dict[str, Any]] = {
+_ROLE_SCHEMAS: Dict[AgentRole, Dict[str, Any]] = {
     AgentRole.ORCHESTRATOR: {
         "type": "dict",
         "fields": {

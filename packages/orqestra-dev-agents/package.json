@@ -1,7 +1,7 @@
 {
   "name": "orqestra-dev-agents",
-  "version": "0.1.15",
-  "description": "CLI to scaffold autonomous orchestrator-driven development agents for VS Code repositories.",
+  "version": "1.0.0",
+  "description": "CLI to scaffold autonomous orchestrator-driven development agents for Copilot, Claude, Codex, OpenCode, and related coding assistants.",
   "license": "MIT",
   "type": "commonjs",
   "repository": {
@@ -31,6 +31,9 @@
   },
   "keywords": [
     "copilot",
+    "claude",
+    "codex",
+    "opencode",
     "agents",
     "developer-tools",
     "automation",
@@ -38,6 +41,11 @@
   ],
   "scripts": {
     "start": "node bin/orqestra-dev-agents.js --help",
+    "orqestra:hub": "node bin/orqestra-dev-agents.js hub",
+    "orqestra:agents": "node bin/orqestra-dev-agents.js agents",
+    "orqestra:workflows": "node bin/orqestra-dev-agents.js workflows",
+    "orqestra:skills": "node bin/orqestra-dev-agents.js skills",
+    "orqestra:tools": "node bin/orqestra-dev-agents.js tools",
     "doctor": "node bin/orqestra-dev-agents.js doctor",
     "runtime": "node bin/orqestra-dev-agents.js runtime"
   }

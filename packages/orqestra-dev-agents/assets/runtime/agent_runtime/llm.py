@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from typing import Any, Dict
+
 import json
 import os
 from pathlib import Path
-from typing import Any
 from urllib import error, request
 
 from .prompt_assets import load_role_prompt
@@ -23,7 +24,7 @@ class LLMClient:
     def enabled(self) -> bool:
         return bool(self.base_url and self.api_key)
 
-    def generate_worker_output(self, task: TaskRecord) -> dict[str, Any]:
+    def generate_worker_output(self, task: TaskRecord) -> Dict[str, Any]:
         if not self.enabled:
             raise RuntimeError("LLM client is not configured")
 

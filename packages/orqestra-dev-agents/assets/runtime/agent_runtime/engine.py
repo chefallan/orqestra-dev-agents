@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Dict, List, Optional, Set, Tuple
+
 import asyncio
 import os
 from datetime import datetime, timezone
@@ -16,14 +18,25 @@ from .store import TaskStore
 from .workers import execute_specialist
 
 
+DEFAULT_SCAFFOLD_CONTEXT = {
+    "root": "app",
+    "api_dir": "app/api",
+    "web_dir": "app/web",
+    "docs_dir": "app/docs",
+    "runtime_dir_reserved": True,
+    "runtime_scope": "orqestra-dev-agents-only",
+    "policy": "Put generated project source under app/ by default. runtime/ is for Orqestra runtime files only. Use custom directories only when explicitly requested.",
+}
+
+
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
 def _contract_validation_summary(task: TaskRecord) -> dict:
     status = "not_applicable"
-    valid: bool | None = None
-    errors: list[str] = []
+    valid: Optional[bool] = None
+    errors: List[str] = []
 
     artifacts = {}
     if isinstance(task.output, dict):
@@ -66,7 +79,7 @@ def _contract_validation_summary(task: TaskRecord) -> dict:
     }
 
 
-def _contract_validation_rollup(tasks: list[TaskRecord]) -> dict:
+def _contract_validation_rollup(tasks: List[TaskRecord]) -> dict:
     counts = {
         "passed": 0,
         "failed": 0,
@@ -74,7 +87,7 @@ def _contract_validation_rollup(tasks: list[TaskRecord]) -> dict:
         "unknown": 0,
         "not_applicable": 0,
     }
-    failed_tasks: list[dict] = []
+    failed_tasks: List[dict] = []
 
     for task in tasks:
         summary = _contract_validation_summary(task)
@@ -110,12 +123,12 @@ class AgentRuntime:
         self.llm_client = LLMClient(repo_root)
         self.prompt_store = PromptStore(repo_root)
         self.docs_store = DocsStore(repo_root)
-        self.queue: asyncio.Queue[str] = asyncio.Queue()
-        self._workers: list[asyncio.Task] = []
+        self.queue: asyncio.Queue = asyncio.Queue()
+        self._workers: List[asyncio.Task] = []
         self._started = False
-        self._dead_letter: dict[str, list[TaskRecord]] = {}
-        self._queued_task_ids: set[str] = set()
-        self._maintenance_task: asyncio.Task | None = None
+        self._dead_letter: Dict[str, List[TaskRecord]] = {}
+        self._queued_task_ids: Set[str] = set()
+        self._maintenance_task: Optional[asyncio.Task] = None
         self._maintenance_enabled = os.getenv("AUTONOMOUS_MAINTENANCE_ENABLED", "true").lower() == "true"
         self._maintenance_interval_sec = max(60, int(os.getenv("AUTONOMOUS_MAINTENANCE_INTERVAL_SEC", "1800")))
         self._prompt_quality_min_improvement = float(os.getenv("PROMPT_QUALITY_MIN_IMPROVEMENT", "2.0"))
@@ -151,17 +164,30 @@ class AgentRuntime:
 
     async def create_run(self, objective: str, context: dict, tenant_id: str) -> str:
         run_id = str(uuid4())
+        merged_context = self._with_default_scaffold_context(context)
         task = self.task_store.create_task(
             run_id=run_id,
             tenant_id=tenant_id,
             role=AgentRole.ORCHESTRATOR,
             task_type=TaskType.ORCHESTRATE_GOAL,
             objective=objective,
-            payload={"context": context},
+            payload={"context": merged_context},
             max_retries=1,
         )
         await self.enqueue(task.id)
         return run_id
+
+    def _with_default_scaffold_context(self, context: dict) -> dict:
+        merged = dict(context or {})
+        scaffold = merged.get("scaffold")
+        if not isinstance(scaffold, dict):
+            scaffold = {}
+
+        for key, value in DEFAULT_SCAFFOLD_CONTEXT.items():
+            scaffold.setdefault(key, value)
+
+        merged["scaffold"] = scaffold
+        return merged
 
     async def create_prompt_enhancement(
         self,
@@ -171,7 +197,7 @@ class AgentRuntime:
         seed_prompt: str,
         target_file: str,
         bypass_cooldown: bool = False,
-    ) -> tuple[str, str]:
+    ) -> Tuple[str, str]:
         run_id = str(uuid4())
         task = self.task_store.create_task(
             run_id=run_id,
@@ -370,15 +396,15 @@ class AgentRuntime:
                 continue
             await self.enqueue(task.id)
 
-    def get_task(self, task_id: str) -> TaskRecord | None:
+    def get_task(self, task_id: str) -> Optional[TaskRecord]:
         return self.task_store.get_task(task_id)
 
-    def list_tasks(self, run_id: str | None = None, tenant_id: str | None = None) -> list[TaskRecord]:
+    def list_tasks(self, run_id: Optional[str] = None, tenant_id: Optional[str] = None) -> List[TaskRecord]:
         return self.task_store.list_tasks(run_id=run_id, tenant_id=tenant_id)
 
-    def list_runs(self, tenant_id: str) -> list[RunView]:
+    def list_runs(self, tenant_id: str) -> List[RunView]:
         run_ids = self.task_store.list_runs(tenant_id)
-        views: list[RunView] = []
+        views: List[RunView] = []
 
         for run_id in run_ids:
             tasks = self.task_store.list_tasks(run_id=run_id, tenant_id=tenant_id)
@@ -412,7 +438,7 @@ class AgentRuntime:
 
         return views
 
-    def get_dead_letter(self, run_id: str, tenant_id: str) -> list[TaskRecord]:
+    def get_dead_letter(self, run_id: str, tenant_id: str) -> List[TaskRecord]:
         if not self.task_store.run_belongs_to_tenant(run_id, tenant_id):
             return []
         return [task.model_copy(deep=True) for task in self._dead_letter.get(run_id, [])]
@@ -420,7 +446,7 @@ class AgentRuntime:
     def run_belongs_to_tenant(self, run_id: str, tenant_id: str) -> bool:
         return self.task_store.run_belongs_to_tenant(run_id, tenant_id)
 
-    def get_run_autonomy_health(self, run_id: str, tenant_id: str) -> dict | None:
+    def get_run_autonomy_health(self, run_id: str, tenant_id: str) -> Optional[dict]:
         if not self.task_store.run_belongs_to_tenant(run_id, tenant_id):
             return None
 
@@ -623,11 +649,11 @@ class AgentRuntime:
         text = legacy_path.read_text(encoding="utf-8")
         return text[:6000]
 
-    def _load_maintenance_targets(self) -> list[tuple[str, str]]:
+    def _load_maintenance_targets(self) -> List[Tuple[str, str]]:
         agents_dir = self.repo_root / "agents"
         if not agents_dir.exists():
             return []
-        targets: list[tuple[str, str]] = []
+        targets: List[Tuple[str, str]] = []
         for agent_file in sorted(agents_dir.glob("*.agents.md")):
             name = agent_file.name
             title = name.replace(".agents.md", "").replace("-", " ").title()

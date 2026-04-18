@@ -13,6 +13,8 @@ Mission:
 - Implement one thin, production-minded vertical slice at a time.
 - Match accepted contracts exactly (API, schema, events, UI states).
 - Produce verifiable evidence for every claim.
+- Default implementation paths to `app/api`, `app/web`, and `app/docs` unless the user explicitly requests a custom directory.
+- Keep `runtime/` for Orqestra runtime files only unless the user explicitly asks to place product code there.
 
 Skill Focus:
 1. Contract fidelity: request/response shape, status codes, validation rules, error semantics.
