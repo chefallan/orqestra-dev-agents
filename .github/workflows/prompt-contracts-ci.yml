@@ -1,0 +1,27 @@
+name: Prompt Contracts CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  validate-prompt-contracts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Verify runtime compiles
+        run: python -m compileall runtime/agent_runtime scripts/validate_prompt_contracts.py
+
+      - name: Validate prompt contract schemas
+        run: python scripts/validate_prompt_contracts.py --repo-root .

@@ -1,0 +1,44 @@
+{
+  "name": "orqestra-dev-agents",
+  "version": "0.1.15",
+  "description": "CLI to scaffold autonomous orchestrator-driven development agents for VS Code repositories.",
+  "license": "MIT",
+  "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chefallan/orqestra-dev-agents.git",
+    "directory": "packages/orqestra-dev-agents"
+  },
+  "homepage": "https://github.com/chefallan/orqestra-dev-agents/tree/main/packages/orqestra-dev-agents",
+  "bugs": {
+    "url": "https://github.com/chefallan/orqestra-dev-agents/issues"
+  },
+  "author": "chefallan <talk@itschefallan.com> (https://itschefallan.com)",
+  "bin": {
+    "orqestra-dev-agents": "bin/orqestra-dev-agents.js"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    "bin",
+    "src",
+    "assets",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "copilot",
+    "agents",
+    "developer-tools",
+    "automation",
+    "orchestrator"
+  ],
+  "scripts": {
+    "start": "node bin/orqestra-dev-agents.js --help",
+    "doctor": "node bin/orqestra-dev-agents.js doctor",
+    "runtime": "node bin/orqestra-dev-agents.js runtime"
+  }
+}

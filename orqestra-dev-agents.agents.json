@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "autonomousMaintenance": true,
+  "maintenanceIntervalSeconds": 1800,
+  "qualityGate": {
+    "minImprovement": 2.0,
+    "minScore": 45,
+    "cooldownSeconds": 1800
+  },
+  "agents": [
+    "orchestrator",
+    "product_manager",
+    "system_architect",
+    "webapp_builder",
+    "security_auditor",
+    "qa_reliability",
+    "documentation_agent",
+    "memory_steward"
+  ]
+}
